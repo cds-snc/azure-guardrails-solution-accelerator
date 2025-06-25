@@ -38,7 +38,7 @@ noAlertRuleforBGaccts = Create an alert for the Breakglass accounts using the Si
 NoAlertRuleforCaps = Create an alert for the Conditional Access Policy changes and updates using the AuditLogs. Missing one of the required alerts.
 
 globalAdminAccntsSurplus = There must be five or fewer global administrator accounts.
-globalAdminAccntsMinimum = There are not enough Global Administrator Accounts. There must be at least two but no more than five Active Global Administrator Accounts.
+globalAdminAccntsMinimum = There are not enough Global Administrator Accounts found with an active status. The solution is assuming that you are using eligible Global Administrator Accounts.
 allGAUserHaveMFA = All Azure native global administrator accounts have been identified and secured with at least two authentication methods.
 gaUserMisconfiguredMFA = Some (one or more) Azure native global administrator accounts have not properly configured Multi-Factor Authentication (MFA): {0}
 
@@ -233,6 +233,7 @@ policyNotCompliant = Resource is not compliant with the required policy. Please 
 policyHasExemptions = Policy has exemptions configured. All resources must be evaluated by this policy.
 policyNoApplicableResources = No applicable resources found. Policy is assigned at tenant level.
 
+
 # GuardRail #8
 noNSG=No NSG is present.
 subnetCompliant = Subnet is compliant.
@@ -270,6 +271,9 @@ wAFNotEnabled = The application gateway assigned does not have configured Web Ap
 firewallFound = There is a {0} associated to this subscription.
 wAFEnabled = There is an application gateway associated to this subscription with the appropriate configurations.
 networkSecurityTools = Tools In Use For Limiting Access To Authorized Source IP Addresses
+networkInterfaceIPs = Policy for Limiting Public IPs
+policyNoApplicableResourcesSub = Policy is assigned at the subscription level. No applicable resources found
+policyNotConfiguredSub = Required policy is not assigned to this subscription: {0}. Please assign the policy to ensure compliance.
 
 # GuardRail #10
 cbsSubDoesntExist = CBS Subscription doesnt exist
@@ -306,7 +310,7 @@ compliantServiceHealthAlerts = All subscriptions have Service Health Alerts, and
 msDefenderChecks = Microsoft Defender for Cloud Alerts and Events Check
 NotAllSubsHaveDefenderPlans = The following subscription(s) lack a defender plan: {0}. Enable Defender monitoring for all subscriptions.
 errorRetrievingNotifications = Defender alert notifications for the subscription(s) are not configured. Ensure they match the Remediation Guidance requirements.
-EmailsOrOwnerNotConfigured = Defender alert notifications for the subscription do not include at least two email addresses or subscription owners. Configure this to ensure alerts are sent correctly.
+EmailsOrOwnerNotConfigured = Defender alert notifications for the subscription {0} do not include at least two email addresses or subscription owners. Configure this to ensure alerts are sent correctly.
 AlertNotificationNotConfigured = Defender alert notifications are incorrect. Set the severity to Medium or Low and review the Remediation Guidance.
 AttackPathNotificationNotConfigured = Defender alerts must include attack path notifications. Ensure that the severity is set to Medium or Low for each subscription's alerts, following the guidelines provided in the Remediation Guidance.
 DefenderCompliant = MS Defender for Cloud is enabled for all subscriptions, and email notifications are properly configured.

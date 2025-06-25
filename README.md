@@ -1,21 +1,5 @@
 # Azure Compliance as Code Solution (Guardrails Solution Accelerator) for Canadian Public Sector
 
-## $${\color{Red} Notice \space on \space version \space 2.3.1 \space (Pending \space Upgrade \space to \space version \space 2.3.2)}$$
-We would like to inform you that major enhancements for Guardrail 3 and Guardrail 1 are expected in the upcoming v2.3.2 release. This release is anticipated to be available in early May.
- 
-While you are welcome to install the current version 2.3.1, please be prepared to upgrade to version 2.3.2, once it is released. We highly recommend waiting for the upcoming release to take advantage of the significant improvements.
- 
-Thank you for your attention and cooperation.
-___________________________________________________________________
-## $${\color{Red} Avis \space sur \space la \space version \space 2.3.1 \space (en \space attente \space de \space mise \space à \space niveau \space vers \space la \space version \space 2.3.2)}$$
-Nous aimerions vous informer que des améliorations majeures pour la Mesure de protection 3 et la Mesure de protection 1 sont attendues dans la prochaine version v2.3.2. Cette version devrait être disponible au début du mois de mai.
- 
-Bien que vous puissiez installer la version actuelle 2.3.1, soyez prêt à passer à la version 2.3.2, une fois qu’elle sera disponible. Nous vous recommandons fortement d’attendre la prochaine version pour profiter des améliorations significatives.
-
-Nous vous remercions de votre attention et votre coopération.
-
-----------------------------------------------------------------------
-
 ## Introduction
 
 The purpose of this implementation is to help Canadian Public Sector departments and agencies to identify and remediate the [GC Cloud Guardrails](https://github.com/canada-ca/cloud-guardrails#gc-cloud-guardrails) to ensure ongoing compliance with the GC Cloud Guardrail policy validations.
@@ -44,12 +28,18 @@ CaC Automation Objectives:
 * support the growing and evolving adoption of Cloud services within the GC
 * strengthen and optimize existing Cloud security processes and services
 
-## Architecture
-
-Refer to gcxchange Azure Onboarding Presentation. https://gcxgce.sharepoint.com/teams/10001628
+## Architecture and Permissions 
+Refer to gcxchange Azure Technical Presentation. 
+[Technical Presentation - Microsoft Azure Compliance as Code](https://gcxgce.sharepoint.com/teams/10001628/Shared%20Documents/Forms/AllItems.aspx?id=%2Fteams%2F10001628%2FShared%20Documents%2FGeneral%2FAzure%20CaC%20%2D%20Technical%20Presentation&p=true&ga=1)
 
 ## Configuration and Installation
-The Azure Installation Playbook can be found on gcxchange. https://gcxgce.sharepoint.com/teams/10001628
+The Azure Installation Playbook can be found on gcxchange. 
+[Playbook1 Azure Client Installation of the CaC Solution](https://gcxgce.sharepoint.com/teams/10001628/Shared%20Documents/Forms/AllItems.aspx?id=%2Fteams%2F10001628%2FShared%20Documents%2FGeneral%2FAzure%20CaC%20%2D%20Installation%20Playbook&p=true&ga=1)
+
+## Release Notes
+
+Release Notes can be found on gcxchange. They will provide any breaking changes and deltas between the previous version and the latest available on GitHub.
+[Release Notes for Azure CaC Solution](https://gcxgce.sharepoint.com/teams/10001628/Shared%20Documents/Forms/AllItems.aspx?id=%2Fteams%2F10001628%2FShared%20Documents%2FGeneral%2FAzure%20CaC%20%2D%20Release%20Notes&p=true&ga=1)
 
 ## How it works
 
@@ -120,11 +110,17 @@ Objectifs d’automatisation de CC :
 *supporter l’adoption croissante et évolutive des services infonuagiques au sein du GC
 * renforcer et optimiser les processus et services de sécurité infonuagique existants
 
-## Architecture
-Consultez la présentation d’intégration Azure à gcéchange. https://gcxgce.sharepoint.com/teams/10001628
+## Architecture et permissions
+Voir la présentation technique Azure sur gcéchange
+[Présentation technique - Solution CC Microsoft Azure](https://gcxgce.sharepoint.com/teams/10001628/Shared%20Documents/Forms/AllItems.aspx?id=%2Fteams%2F10001628%2FShared%20Documents%2FGeneral%2FAzure%20CC%20%E2%80%93%20Pr%C3%A9sentation%20technique%20%2D%20Azure%20CaC%20%2D%20Technical%20Presentation&p=true&ga=1)
 
 ## Configuration et Installation 
-Le Livre de jeu d’installation Azure se trouve sur gcéchange. https://gcxgce.sharepoint.com/teams/10001628
+Le Livre de jeu d’installation Azure se trouve sur gcéchange. 
+[Livre de jeu1 Azure Installation par le client de Solution Azure CC](https://gcxgce.sharepoint.com/teams/10001628/Shared%20Documents/Forms/AllItems.aspx?id=%2Fteams%2F10001628%2FShared%20Documents%2FGeneral%2FAzure%20CC%20%E2%80%93%20Livre%20de%20jeu%20d%E2%80%99installation%20%2D%20Azure%20CaC%20%2D%20Installation%20Playbook&p=true&ga=1)
+
+## Notes de relâche
+Les notes de relâches peuvent être trouvées sur gcéchange. Elles indiquent toutes les changements de ruptures et les différences entre la version précédente et la dernière version disponible sur GitHub. 
+[Notes de relâche de la Solution Azure CC](https://gcxgce.sharepoint.com/teams/10001628/Shared%20Documents/Forms/AllItems.aspx?id=%2Fteams%2F10001628%2FShared%20Documents%2FGeneral%2FAzure%20CC%20%E2%80%93%20Notes%20de%20rel%C3%A2che%20%2D%20Azure%20CaC%20%2D%20Release%20Notes&p=true&ga=1&ovuser=d05bc194%2D94bf%2D4ad6%2Dae2e%2D1db0f2e38f5e%2Cmarc%2Eaubrey%40ssc%2Dspc%2Egc%2Eca)
 
 ## Comment ça fonctionne
 La solution CC comporte plusieurs modules. Chaque module vérifie un ensemble précis de configuration dans l’environnement et les compare aux validations [Mesures de sécurité infonuagique](https://github.com/canada-ca/cloud-guardrails?tab=readme-ov-file#mesures-de-protection-du-nuage-du-gc) mandatées par le [Secrétariat du Conseil du Trésor](https://www.canada.ca/fr/secretariat-conseil-tresor.html) et [Services partagés Canada](https://www.canada.ca/fr/services-partages.html).
