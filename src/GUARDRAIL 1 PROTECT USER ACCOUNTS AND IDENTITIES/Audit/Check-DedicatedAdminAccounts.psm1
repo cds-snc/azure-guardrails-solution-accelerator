@@ -38,14 +38,11 @@ function Check-DedicatedAdminAccounts {
     # highly privileged Role names
     $highlyPrivilegedAdminRoleNames = @("Global Administrator","Privileged Role Administrator")
 
-    # Get the list of GA users (ACTIVE assignments)
+    # Get the list of GA users (ACTIVE assignments) - using paginated query
     $urlPath = "/directoryRoles"
     try {
-        $response = Invoke-GraphQuery -urlPath $urlPath -ErrorAction Stop
-        # portal
+        $response = Invoke-GraphQueryEX -urlPath $urlPath -ErrorAction Stop
         $data = $response.Content
-        # # localExecution
-        # $data = $response
 
         if ($null -ne $data -and $null -ne $data.value) {
             $rolesResponse  = $data.value
@@ -68,14 +65,11 @@ function Check-DedicatedAdminAccounts {
 
         $roleId = $role.id
         $roleName = $role.displayName
-        # Endpoint to get members of the role
+        # Endpoint to get members of the role - using paginated query
         $urlPath = "/directoryRoles/$roleId/members"
         try{
-            $response = Invoke-GraphQuery -urlPath $urlPath -ErrorAction Stop
-            # portal
+            $response = Invoke-GraphQueryEX -urlPath $urlPath -ErrorAction Stop
             $data = $response.Content
-            # # localExecution
-            # $data = $response
 
             if ($null -ne $data -and $null -ne $data.value) {
                 $hpAdminRoleResponse  = $data.value
@@ -100,14 +94,11 @@ function Check-DedicatedAdminAccounts {
         }
     }
 
-    # list all users
+    # list all users - using paginated query to handle large user counts (>100)
     $urlPath = "/users"
     try {
-        $response = Invoke-GraphQuery -urlPath $urlPath -ErrorAction Stop
-        # portal
+        $response = Invoke-GraphQueryEX -urlPath $urlPath -ErrorAction Stop
         $data = $response.Content
-        # # localExecution
-        # $data = $response
 
         if ($null -ne $data -and $null -ne $data.value) {
             $allUsers = $data.value | Select-Object userPrincipalName , displayName, givenName, surname, id, mail
@@ -154,9 +145,9 @@ function Check-DedicatedAdminAccounts {
     $blobs = Get-AzStorageBlob -Container $ContainerName -Context $StorageAccount.Context
     if ($null -eq $blobs) {            
         # a blob with the name $DocumentName was not located in the specified storage account
-        $errorMsg = "Could not get blob from storage account '$storageAccountName' in resoruce group '$resourceGroupName' of `
-        subscription '$subscriptionId'; verify that the blob exists and that you have permissions to it. Error: $_"
-        $ErrorList.Add($errorMsg) 
+        $warningMsg = "Could not get blob from storage account '$storageAccountName' in resoruce group '$resourceGroupName' of `
+        subscription '$subscriptionId'; verify that the blob exists and that you have permissions to it."
+        Write-Warning $warningMsg
             
         $blobFound = $false
     }
@@ -364,21 +355,10 @@ function Check-DedicatedAdminAccounts {
         itsgcode         = $itsgcode
     }
 
-    # Conditionally add the Profile field based on the feature flag
+    # Add profile information if MCUP feature is enabled
     if ($EnableMultiCloudProfiles) {
-        $evalResult = Get-EvaluationProfile -CloudUsageProfiles $CloudUsageProfiles -ModuleProfiles $ModuleProfiles
-        if (!$evalResult.ShouldEvaluate) {
-            if ($evalResult.Profile -gt 0) {
-                $PsObject.ComplianceStatus = "Not Applicable"
-                $PsObject | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile
-                $PsObject.Comments = "Not evaluated - Profile $($evalResult.Profile) not present in CloudUsageProfiles"
-            } else {
-                $ErrorList.Add("Error occurred while evaluating profile configuration")
-            }
-        } else {
-            
-            $PsObject | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile
-        }
+        $result = Add-ProfileInformation -Result $PsObject -CloudUsageProfiles $CloudUsageProfiles -ModuleProfiles $ModuleProfiles -SubscriptionId $subscriptionId -ErrorList $ErrorList
+        Write-Host "$result"
     }
     
     $moduleOutput= [PSCustomObject]@{ 

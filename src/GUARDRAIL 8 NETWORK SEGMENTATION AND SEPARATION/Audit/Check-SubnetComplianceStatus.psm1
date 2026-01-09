@@ -10,12 +10,22 @@ function Update-SubnetObjectWithProfile {
     )
 
     if (!$EvalResult.ShouldEvaluate) {
-        if ($EvalResult.Profile -gt 0) {
-            $SubnetObject.ComplianceStatus = "Not Applicable"
-            $SubnetObject | Add-Member -MemberType NoteProperty -Name "Profile" -Value $EvalResult.Profile -Force
-            $SubnetObject.Comments = "Not evaluated - Profile $($EvalResult.Profile) not present in CloudUsageProfiles"
+        if(!$evalResult.ShouldAvailable ){
+            if ($evalResult.Profile -gt 0) {
+                $SubnetObject.ComplianceStatus = "Not Applicable"
+                $SubnetObject | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile -Force
+                $SubnetObject.Comments = "Not available - Profile $($evalResult.Profile) not applicable for this guardrail"
+            } else {
+                $ErrorList.Add("Error occurred while evaluating profile configuration availability")
+            }
         } else {
-            $ErrorList.Add("Error occurred while evaluating profile configuration")
+            if ($evalResult.Profile -gt 0) {
+                $SubnetObject.ComplianceStatus = "Not Applicable"
+                $SubnetObject | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile -Force
+                $SubnetObject.Comments = "Not evaluated - Profile $($evalResult.Profile) not present in CloudUsageProfiles"
+            } else {
+                $ErrorList.Add("Error occurred while evaluating profile configuration")
+            }
         }
     } else {
         $SubnetObject | Add-Member -MemberType NoteProperty -Name "Profile" -Value $EvalResult.Profile -Force
@@ -103,33 +113,14 @@ function Get-SubnetComplianceInformation {
                             $ComplianceStatus = $false
                             $Comments = ''
                             if ($null -ne $subnet.NetworkSecurityGroup) {
-                                Write-Debug "Found $($subnet.NetworkSecurityGroup.Id.Split("/")[8]) NSG"
-                                #Add routine to analyze NSG regarding standard rules.
-                                $nsg = Get-AzNetworkSecurityGroup -Name $subnet.NetworkSecurityGroup.Id.Split("/")[8] -ResourceGroupName $subnet.NetworkSecurityGroup.Id.Split("/")[4]
-                                if ($nsg.SecurityRules.count -ne 0) { #NSG has other rules on top of standard rules.
-
-                                    $LastInboundSecurityRule = $nsg.SecurityRules | Sort-Object Priority -Descending | Where-Object { $_.Direction -eq 'Inbound' } | Select-Object -First 1
-                                    $LastOutboundSecurityRule = $nsg.SecurityRules | Sort-Object Priority -Descending | Where-Object { $_.Direction -eq 'Outbound' } | Select-Object -First 1
-
-                                    if ($LastInboundSecurityRule -and $LastOutboundSecurityRule -and
-                                        $LastInboundSecurityRule.SourceAddressPrefix -eq '*' -and $LastInboundSecurityRule.destinationPortRange -eq '*' -and $LastInboundSecurityRule.sourcePortRange -eq '*' -and $LastInboundSecurityRule.Access -eq "Deny" -and 
-                                        $LastOutboundSecurityRule.DestinationAddressPrefix -eq '*' -and $LastOutboundSecurityRule.destinationPortRange -eq '*' -and $LastOutboundSecurityRule.sourcePortRange -eq '*' -and $LastOutboundSecurityRule.Access -eq "Deny") {
-                                        $ComplianceStatus = $true
-                                        $Comments = $msgTable.subnetCompliant
-                                    }
-                                    else {
-                                        $ComplianceStatus = $false
-                                        $Comments = $msgTable.nsgConfigDenyAll
-                                    }
-                                }
-                                else {
-                                    #NSG is present but has no custom rules at all.
-                                    $ComplianceStatus = $false
-                                    $Comments = $msgTable.nsgCustomRule
-
-                                }
+                                $nsgName = ($subnet.NetworkSecurityGroup.Id -split '/')[ -1 ]
+                                Write-Debug "Found $nsgName NSG"
+                                # GR8 Issue 566: only require NSG association; rule inspection removed.
+                                $ComplianceStatus = $true
+                                $Comments = $msgTable.subnetCompliant
                             }
                             else {
+                                $ComplianceStatus = $false
                                 $Comments = $msgTable.noNSG
                             }
                             $SubnetObject = [PSCustomObject]@{ 
@@ -222,6 +213,8 @@ function Get-SubnetComplianceInformation {
             # No vnets found or no subnets found in vnets
             $ComplianceStatus = $true
             $Comments = "$($msgTable.noSubnets) - $($sub.Name)"
+
+            # Segmentation
             $SubnetObject = [PSCustomObject]@{ 
                 SubscriptionName = $sub.Name 
                 SubnetName       = $msgTable.noSubnets
@@ -236,6 +229,23 @@ function Get-SubnetComplianceInformation {
                 Update-SubnetObjectWithProfile -SubnetObject $SubnetObject -EvalResult $evalResult -ErrorList $ErrorList
             }
             $SubnetList.add($SubnetObject) | Out-Null
+
+            # Separation
+            $SubnetObject = [PSCustomObject]@{ 
+                SubscriptionName = $sub.Name 
+                SubnetName       = $msgTable.noSubnets
+                ComplianceStatus = $ComplianceStatus
+                Comments         = $Comments
+                ItemName         = $msgTable.networkSeparation
+                ControlName      = $ControlName
+                itsgcode         = $itsgcodesegmentation
+                ReportTime       = $ReportTime
+            }
+            if ($EnableMultiCloudProfiles) {
+                Update-SubnetObjectWithProfile -SubnetObject $SubnetObject -EvalResult $evalResult -ErrorList $ErrorList
+            }
+            $SubnetList.add($SubnetObject) | Out-Null
+
         }
     }
     if ($debug) {
@@ -249,4 +259,3 @@ function Get-SubnetComplianceInformation {
     }
     return $moduleOutput
 }
-

@@ -14,7 +14,7 @@
 RootModule = 'Get-AzureADLicenseType'
 
 # Version number of this module.
-ModuleVersion = '1.1.9'
+ModuleVersion = '1.1.11'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()

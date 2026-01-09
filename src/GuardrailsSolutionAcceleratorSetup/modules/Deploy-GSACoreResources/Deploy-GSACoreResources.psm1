@@ -35,6 +35,23 @@ Function Deploy-GSACoreResources {
     }
     # add automation account msi to config object
     $config['guardrailsAutomationAccountMSI'] = $mainBicepDeployment.Outputs.guardrailsAutomationAccountMSI.value
+
+    # persist MSI object id as automation variable for runbooks
+    $automationVariableName = 'GuardrailsAutomationAccountMSI'
+    $automationAccountName = $config['runtime']['automationAccountName']
+    $automationAccountResourceGroup = $config['runtime']['resourceGroup']
+    try {
+        $existingVariable = Get-AzAutomationVariable -ResourceGroupName $automationAccountResourceGroup -AutomationAccountName $automationAccountName -Name $automationVariableName -ErrorAction SilentlyContinue
+        if ($existingVariable) {
+            Set-AzAutomationVariable -ResourceGroupName $automationAccountResourceGroup -AutomationAccountName $automationAccountName -Name $automationVariableName -Value $config['guardrailsAutomationAccountMSI'] -Encrypted:$true -ErrorAction Stop | Out-Null
+        }
+        else {
+            New-AzAutomationVariable -ResourceGroupName $automationAccountResourceGroup -AutomationAccountName $automationAccountName -Name $automationVariableName -Value $config['guardrailsAutomationAccountMSI'] -Encrypted:$true -ErrorAction Stop | Out-Null
+        }
+    }
+    catch {
+        Write-Warning "Failed to persist automation account MSI id to variable '$automationVariableName'. Telemetry MSI scan will be skipped until this is set. $_"
+    }
     Write-Verbose "Core resource bicep deployment complete!"
 
     Write-Verbose "Granting Automation Account MSI permission to the Graph API"
@@ -42,7 +59,16 @@ Function Deploy-GSACoreResources {
         #region Assign permissions>
         $graphAppId = "00000003-0000-0000-c000-000000000000"
         $graphAppSP = Get-AzADServicePrincipal -ApplicationId $graphAppId
-        $appRoleIds = @("Organization.Read.All", "User.Read.All", "UserAuthenticationMethod.Read.All", "Policy.Read.All","Directory.Read.All","AuditLog.Read.All","AccessReview.Read.All")
+        $appRoleIds = @(
+            "Organization.Read.All",
+            "User.Read.All",
+            "UserAuthenticationMethod.Read.All",
+            "Policy.Read.All",
+            "Directory.Read.All",
+            "AuditLog.Read.All",
+            "AccessReview.Read.All",
+            "CustomSecAttributeAssignment.Read.All"
+        )
 
         foreach ($approleidName in $appRoleIds) {
             Write-Verbose "`tAdding permission to $approleidName"

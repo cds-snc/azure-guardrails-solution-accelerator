@@ -1,4 +1,4 @@
-function Get-CloudConsoleAccess {
+function Get-LocationBasedCAP {
     param (      
         [Parameter(Mandatory=$true)]
         [string] $ControlName,
@@ -10,21 +10,32 @@ function Get-CloudConsoleAccess {
         [hashtable] $msgTable,
         [Parameter(Mandatory=$true)]
         [string] $ReportTime,
-        [string] $CloudUsageProfiles = "3",  # Passed as a string
-        [string] $ModuleProfiles,  # Passed as a string
-        [switch] $EnableMultiCloudProfiles # New feature flag, default to false    
+        [string] $CloudUsageProfiles = "3",     # Passed as a string
+        [string] $ModuleProfiles,               # Passed as a string
+        [switch] $EnableMultiCloudProfiles      # feature flag, default to false    
     )
     $IsCompliant = $false
     [PSCustomObject] $ErrorList = New-Object System.Collections.ArrayList
-    
-    # get named locations
+
+
+    # Check 2: Allowed Location – Conditional Access Policy
     $PsObjectLocation = Get-allowedLocationCAPCompliance -ErrorList $ErrorList -IsCompliant $IsCompliant
     $ErrorList = $PsObjectLocation.Errors
+    $CommentsArray = $PsObjectLocation.Comments
+
+    if ($PsObjectLocation.ComplianceStatus -eq $true){
+        $IsCompliant = $true
+        $Comments = $msgTable.isCompliant + " " + $msgTable.compliantC2 + " " + $CommentsArray
+    }
+    else{
+        $Comments = $msgTable.isNotCompliant + " " + $msgTable.nonCompliantC2 + " " + $CommentsArray
+    }
+
 
     $PsObject = [PSCustomObject]@{
-        ComplianceStatus = $PsObjectLocation.ComplianceStatus
+        ComplianceStatus = $IsCompliant
         ControlName      = $ControlName
-        Comments         = $PsObjectLocation.Comments
+        Comments         = $Comments
         ItemName         = $ItemName
         ReportTime       = $ReportTime
         itsgcode         = $itsgcode
@@ -36,12 +47,10 @@ function Get-CloudConsoleAccess {
         Write-Host "$result"
     }
 
-
     $moduleOutput= [PSCustomObject]@{ 
         ComplianceResults = $PsObject
         Errors=$ErrorList
         AdditionalResults = $AdditionalResults
     }
-    return $moduleOutput   
+    return $moduleOutput
 }
-

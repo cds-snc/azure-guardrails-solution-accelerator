@@ -100,14 +100,11 @@ function Check-GAUserCountMFARequired {
     [bool] $IsCompliant = $false
     [string] $Comments = $null
 
-    # Get the list of GA users (ACTIVE assignments)
+    # Get the list of GA users (ACTIVE assignments) - using paginated query
     $urlPath = "/directoryRoles"
     try {
-        $response = Invoke-GraphQuery -urlPath $urlPath -ErrorAction Stop
-        # portal
+        $response = Invoke-GraphQueryEX -urlPath $urlPath -ErrorAction Stop
         $data = $response.Content
-        # # localExecution
-        # $data = $response
 
         if ($null -ne $data -and $null -ne $data.value) {
             $rolesResponse  = $data.value
@@ -129,14 +126,11 @@ function Check-GAUserCountMFARequired {
     $roleId = $globalAdminRole.id
     $roleName = $globalAdminRole.displayName
     Write-Host "The role name is $roleName"
-    # Endpoint to get members of the role
+    # Endpoint to get members of the role - using paginated query
     $urlPath = "/directoryRoles/$roleId/members"
     try{
-        $response = Invoke-GraphQuery -urlPath $urlPath -ErrorAction Stop
-        # portal
+        $response = Invoke-GraphQueryEX -urlPath $urlPath -ErrorAction Stop
         $data = $response.Content
-        # # localExecution
-        # $data = $response
 
         if ($null -ne $data -and $null -ne $data.value) {
             $gaRoleResponse  = $data.value
@@ -252,21 +246,10 @@ function Check-GAUserCountMFARequired {
         itsgcode         = $itsgcode
     }
 
-    # Conditionally add the Profile field based on the feature flag
+    # Add profile information if MCUP feature is enabled
     if ($EnableMultiCloudProfiles) {
-        $evalResult = Get-EvaluationProfile -CloudUsageProfiles $CloudUsageProfiles -ModuleProfiles $ModuleProfiles
-        if (!$evalResult.ShouldEvaluate) {
-            if ($evalResult.Profile -gt 0) {
-                $PsObject.ComplianceStatus = "Not Applicable"
-                $PsObject | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile
-                $PsObject.Comments = "Not evaluated - Profile $($evalResult.Profile) not present in CloudUsageProfiles"
-            } else {
-                $ErrorList.Add("Error occurred while evaluating profile configuration")
-            }
-        } else {
-            
-            $PsObject | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile
-        }
+        $result = Add-ProfileInformation -Result $PsObject -CloudUsageProfiles $CloudUsageProfiles -ModuleProfiles $ModuleProfiles -SubscriptionId $subscriptionId -ErrorList $ErrorList
+        Write-Host "$result"
     }
     
     $moduleOutput= [PSCustomObject]@{ 
@@ -276,6 +259,5 @@ function Check-GAUserCountMFARequired {
     }
     return $moduleOutput   
 }
-
 
 

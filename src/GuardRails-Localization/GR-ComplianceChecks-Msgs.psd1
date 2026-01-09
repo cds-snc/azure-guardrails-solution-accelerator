@@ -47,8 +47,6 @@ allUserAccountsMFACheck = All Cloud User Accounts MFA Check
 allUserHaveMFA = Native user accounts have been identified, and all users accounts have 2+ methods of authentication enabled.
 
 userMisconfiguredMFA = One or more Native User Accounts have not configured MFA properly
-nativeUserNonMfa = This native user account has not been set up with Multi-Factor Authentication (MFA). It has been {0} days since the last sign-in.
-nativeUserNoSignIn = This native user account has not been set up with Multi-Factor Authentication (MFA) and it has never been used to sign in.
 
 retentionNotMet = The LAW {0} does not meet data retention requirements
 readOnlyLaw = The {0} LAW identified is missing a read-only lock. Add the read-only lock to prevent accidental deletions.
@@ -56,6 +54,11 @@ nonCompliantLaw = The LAW {0} does not match the config.json file.
 logsNotCollected = Not all of the required logs are being collected.
 gcEventLogging = User Account GC Event Logging Check
 gcEventLoggingCompliantComment = Logs are collected, stored and retained to meet this control's requirements.
+lockLevelApproved = The Log Analytics Workspace {0} has an approved lock level of {1}. 
+lockLevelNotApproved = The Log Analytics Workspace {0} has a lock level of {1} which is not approved. Approved lock levels are 'ReadOnly' or 'DeleteOnly'.
+tagFound = The Log Analytics Workspace {0} has a resource tag 'sentinel' with a value of 'true' which indicates that it is being used for Sentinel. 'DeleteOnly' lock is recommended. 
+sentinelTablesFound = The Log Analytics Workspace {0} has Sentinel tables configured. The Log Analytics Workspace is missing the Sentinel resource tag expected, please update or add the tag to: sentinel=true.
+noLockNoTagNoTables = The Log Analytics Workspace {0} does not have an approved  'ReadOnly' or 'DeleteOnly' lock in place. Refer to the Remediation Guide for more information.
 
 dedicatedAdminAccountsCheck = Dedicated user accounts for administration
 invalidUserFile = Update the {0} file and list the highly privileged role User Principal Names (UPNs) and their regular role UPNs.
@@ -115,12 +118,24 @@ noCAPforAnyGroups = None of the conditional access policies refer to one of your
 userCountOne = There is only one user in the environment. User groups are not required. 
 userGroupsMany = The number of user groups is insufficient for the current number of users. At least 2 user groups are needed. 
 reqPolicyUserGroupExists = All users have been assigned to a user group, and at least one conditional access policy references a user group for access control. 
+userStats = User stats - Total Users: {0}; Group Users (Total - Unique): {1}; Members in Tenants: {2}; Guests in Tenants: {3}
+userNotInGroup = User is not associated with any user group.
+userInGroup = No users without groups
 
 riskBasedConditionalPolicy = Authentication Mechanisms: Risk Based Conditional Access Policies
+locationBasedConditionalPolicy = Authentication Mechanisms: Location Based Conditional Access Policies
 nonCompliantC1= Configure the conditional access policy to force password changes based on user risk.
 nonCompliantC2= Configure the conditional access policy to prevent sign-in's from unapproved named locations.
-nonCompliantC1C2 = Configure the conditional access policies outlined in the remediation guidance.
-compliantC1C2 = Both conditional access policies have been configured.
+compliantC1 = The conditional access policy to force password changes based on user risk has been configured.
+compliantC2 = The conditional access policy to prevent sign-in's from unapproved named locations has been configured.
+
+# nonCompliantC1C2 = Configure the conditional access policies outlined in the remediation guidance.
+noCompliantPoliciesfound = No compliant policies found. Policies need to have a single location and that location must be Canada Only.
+allPoliciesAreCompliant = All the following policies are compliant; {0}.
+# noLocationsCompliant = No locations have only Canada in them.
+noLocationsnonCACompliant = No locations have all countries except Canada in them.
+noEnabledPoliciesFound = No enabled conditional access policy found.
+
 
 automatedRoleForUsers = Automated Role Reviews: Role Assignments for Users and Global Administrators
 noAutomatedAccessReviewForUsers = There are no automated access reviews configured for Microsoft Entra ID directory roles. Set up an annual access review for a highly privileged role.
@@ -137,11 +152,8 @@ compliantRecurrenceGuestReviews = Existing guest access reviews meet the require
 
 
 # GuardRail #3
-consoleAccessConditionalPolicy = Conditional Access Policy for Cloud Console Access.
+consoleAccessConditionalPolicy = Conditional Access Policy for Cloud Console Access
 adminAccessConditionalPolicy = Administrator Access Restrictions Applied - device management/trusted locations
-noCompliantPoliciesfound=No compliant policies found. Policies need to have a single location and that location must be Canada Only.
-allPoliciesAreCompliant=All policies are compliant.
-noLocationsCompliant=No locations have only Canada in them.
 
 mfaRequiredForAllUsers = Multi-Factor authentication required for all users by Conditional Access Policy
 noMFAPolicyForAllUsers = No conditional access policy requiring MFA for all users and applications was found. A Conditional Access Policy meeting the following requirements must be configured: 1. state =  'enabled'; 2. includedUsers = 'All'; 3. includedApplications = 'All'; 4. grantControls.builtInControls contains 'mfa'; 5. clientAppTypes contains 'all'; 6. userRiskLevels = @(); 7. signInRiskLevels = @(); 8. platforms = null; 9. locations = null; 10. devices = null; 11. clientApplications = null
@@ -213,6 +225,8 @@ allCertificatesValid = All certificates are valid and from approved Certificate 
 approvedCAFileFound = Approved Certificate Authority (CA) list file '{0}' found and processed
 approvedCAFileNotFound = Approved Certificate Authority (CA) file '{0}' not found in container '{1}' of storage account '{2}'. Unable to verify certificate authorities
 appServiceHttpsConfig = Azure App Service: HTTPS Application Configuration
+keyVaultCertValidationFailed = Certificate stored in Key Vault for listener '{0}' in Application Gateway '{1}' could not be validated. The CAC solution requires 'Key Vault Secrets User' permissions on the customer Key Vault to validate certificates. If the vault is in Access Policy mode, grant the Automation Account managed identity the 'Get' permission on Secrets for this Key Vault. Contact your administrator to grant the CAC Automation Account managed identity access to this Key Vault if desired.
+keyVaultCertRetrievalFailed = Unable to retrieve certificate from Key Vault for listener '{0}' in Application Gateway '{1}'. Certificate may be stored in Key Vault and requires proper permissions to access.
 
 dataInTransit = Secure Connections for Redis Cache and Storage Accounts
 
@@ -277,9 +291,11 @@ policyNotConfiguredSub = Required policy is not assigned to this subscription: {
 
 # GuardRail #10
 cbsSubDoesntExist = CBS Subscription doesnt exist
-cbcSensorsdontExist = The expected CBC sensors do not exist
+cbcSensorsdontExist = The expected CBS sensors do not exist in these subscriptions:
 cbssMitigation = Check subscription provided: {0} or check existence of the CBS solution in the provided subscription.
 cbssCompliant = Found resources in these subscriptions: 
+cbssV3DetectedSuffix = (CBS Sensor V3 detected)
+cbssV2DeprecatedWarning = CBS Sensor V2 is deprecated. Please upgrade to CBS Sensor V3.
 
 # GuardRail #11
 serviceHealthAlerts = Service Health Alerts and Events Check
@@ -301,21 +317,24 @@ setSecurityContact = Please set a security contact for Defender for Cloud in the
 setDfCToStandard = Please set Defender for Cloud plans to Standard. ({0})
 
 noServiceHealthActionGroups = Missing an action group for Service Health Alerts associated with the subscription: {0}
-NotAllSubsHaveAlerts = Not all subscriptions have Service Health Alerts enabled.
+NotAllSubsHaveAlerts = Service Health Alerts are not enabled for this subscription. Ensure that service health alerts are configured on this subscription and that the action group associated with the alert has at least two different contacts.
 EventTypeMissingForAlert = Missing a required event type (Service Issue, Health Advisory, or Security Advisory) for the subscription: {0}
 noServiceHealthAlerts = Could not retrieve any configured alerts for the subscription: "{0}". Ensure all subscriptions have Service Health Alerts configured and the action group associated to the alert  has at least two different contacts.
-nonCompliantActionGroups = All subscriptions have Service Health Alerts, but not all action groups are correctly configured. A minimum of two email addresses or subscription owners are required for the action group.
-compliantServiceHealthAlerts = All subscriptions have Service Health Alerts, and the action group has at least two different contacts.
+nonCompliantActionGroups = This subscription has Service Health Alerts, but not all action groups are correctly configured. A minimum of two email addresses or subscription owners are required for the action group.
+compliantServiceHealthAlerts = This subscription has Service Health Alerts, and the action group has at least two different contacts.
+
+monitoringChecklist = Monitoring Checklist: Use Cases
 
 msDefenderChecks = Microsoft Defender for Cloud Alerts and Events Check
-NotAllSubsHaveDefenderPlans = The following subscription(s) lack a defender plan: {0}. Enable Defender monitoring for all subscriptions.
-errorRetrievingNotifications = Defender alert notifications for the subscription(s) are not configured. Ensure they match the Remediation Guidance requirements.
+NotAllSubsHaveDefenderPlans = The subscription {0} lack a defender plan. Enable Defender monitoring for this subscription.
+errorRetrievingNotifications = Defender alert notifications for this subscription is not configured. Ensure they match the Remediation Guidance requirements.
 EmailsOrOwnerNotConfigured = Defender alert notifications for the subscription {0} do not include at least two email addresses or subscription owners. Configure this to ensure alerts are sent correctly.
 AlertNotificationNotConfigured = Defender alert notifications are incorrect. Set the severity to Medium or Low and review the Remediation Guidance.
 AttackPathNotificationNotConfigured = Defender alerts must include attack path notifications. Ensure that the severity is set to Medium or Low for each subscription's alerts, following the guidelines provided in the Remediation Guidance.
-DefenderCompliant = MS Defender for Cloud is enabled for all subscriptions, and email notifications are properly configured.
+DefenderCompliant = MS Defender for Cloud is enabled for this subscription, and email notifications are properly configured.
+DefenderNonCompliant = MS Defender for Cloud is enabled for this subscription, but the security contact to receive email notifications are not properly configured.
+noDefenderAtAll = All subscription lack a defender plan. Enable Defender monitoring for the subscriptions.
 
-monitoringChecklist = Monitoring Checklist: Use Cases
 
 # GuardRail #12
 mktPlaceCreation = MarketPlaceCreation

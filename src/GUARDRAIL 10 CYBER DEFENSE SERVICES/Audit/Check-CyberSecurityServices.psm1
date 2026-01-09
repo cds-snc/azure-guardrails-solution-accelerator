@@ -15,86 +15,99 @@ function Check-CBSSensors {
         [switch] $EnableMultiCloudProfiles # New feature flag, default to false    
     ) 
 
-    $IsCompliant = $true 
-    $Object = [PSCustomObject]@{
-        ControlName = $ControlName
-        ReportTime = $ReportTime
-        ItemName = $ItemName
-        itsgcode = $itsgcode
-    }
+    $IsCompliant = $true
+    $Comments = ""
+
 
     $FirstTokenInTenantID = $TenantID.Split("-")[0]
-    $CBSResourceNames = @(
+    $CBSResourceNamesV3 = @(
+        "cbsstate$FirstTokenInTenantID",
+        "cbs-$FirstTokenInTenantID-CanadaCentral",
+        "cbs-$FirstTokenInTenantID-CanadaEast"
+    )
+
+    $CBSResourceNamesV2 = @(
+        "cbs-vault-$FirstTokenInTenantID",
         "cbs-$FirstTokenInTenantID",
         "cbs-$FirstTokenInTenantID-CanadaCentral",
-        "cbs-$FirstTokenInTenantID-CanadaEast",
-        "cbs-vault-$FirstTokenInTenantID"
+        "cbs-$FirstTokenInTenantID-CanadaEast"
     )
     
-    if ($debug) { Write-Output $CBSResourceNames }
+    if ($debug) { Write-Output $CBSResourceNamesV3 }
+    if ($debug) { Write-Output $CBSResourceNamesV2 }
 
     $sub = Get-AzSubscription -ErrorAction SilentlyContinue | Where-Object { $_.State -eq 'Enabled' -and $_.Name -eq $SubscriptionName }
     if ($null -eq $sub) {
         $IsCompliant = $false
-        $Object | Add-Member -MemberType NoteProperty -Name Comments -Value $msgTable.cbsSubDoesntExist
+        # $Object | Add-Member -MemberType NoteProperty -Name Comments -Value $msgTable.cbsSubDoesntExist
+        $Comments = $msgTable.cbsSubDoesntExist
         $MitigationCommands = $msgTable.cbssMitigation -f $SubscriptionName
-        if ($EnableMultiCloudProfiles) {
-            $evalResult = Get-EvaluationProfile -CloudUsageProfiles $CloudUsageProfiles -ModuleProfiles $ModuleProfiles -SubscriptionId $sub.Id
-            if (!$evalResult.ShouldEvaluate) {
-                if ($evalResult.Profile -gt 0) {
-                    $Object.ComplianceStatus = "Not Applicable"
-                    $Object | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile
-                    $Object.Comments = "Not evaluated - Profile $($evalResult.Profile) not present in CloudUsageProfiles"
-                } else {
-                    $ErrorList.Add("Error occurred while evaluating profile configuration")
-                }
-            } else {
-                
-                $Object | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile
-            }
-        }
+        
     } else {
         Set-AzContext -Subscription $sub
 
-        if ($EnableMultiCloudProfiles) {        
-            $evalResult = Get-EvaluationProfile -CloudUsageProfiles $CloudUsageProfiles -ModuleProfiles $ModuleProfiles -SubscriptionId $sub.Id
-            if (!$evalResult.ShouldEvaluate) {
-                if ($evalResult.Profile -gt 0) {
-                    $Object.ComplianceStatus = "Not Applicable"
-                    $Object | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile
-                    $Object.Comments = "Not evaluated - Profile $($evalResult.Profile) not present in CloudUsageProfiles"
-                } else {
-                    $ErrorList.Add("Error occurred while evaluating profile configuration")
-                }
-            } else {
-                
-                $Object | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile
-            }
-        }
-        foreach ($CBSResourceName in $CBSResourceNames) {
-            if ($debug) { Write-Output "Searching for CBS Sensor: $CBSResourceName" }
+        $isV3Sensor = $true
+        foreach ($CBSResourceName in $CBSResourceNamesV3) {
+            if ($debug) { Write-Output "Searching for CBS Sensor V3 resource: $CBSResourceName" }
             if ([string]::IsNullOrEmpty((Get-AzResource -Name $CBSResourceName))) {
-                if ($debug) { Write-Output "Missing $CBSResourceName" }
-                $IsCompliant = $false 
+                if ($debug) { Write-Output "Missing V3 resource: $CBSResourceName" }
+                $isV3Sensor = $false
                 break
             }
         }
 
+        $isV2Sensor = $false
+        if (-not $isV3Sensor) {
+            $isV2Sensor = $true
+            foreach ($CBSResourceName in $CBSResourceNamesV2) {
+                if ($debug) { Write-Output "Searching for CBS Sensor V2 resource: $CBSResourceName" }
+                if ([string]::IsNullOrEmpty((Get-AzResource -Name $CBSResourceName))) {
+                    if ($debug) { Write-Output "Missing V2 resource: $CBSResourceName" }
+                    $isV2Sensor = $false
+                    break
+                }
+            }
+        }
+
+        $IsCompliant = ($isV3Sensor -or $isV2Sensor)
+
         if ($IsCompliant) {
-            $Object | Add-Member -MemberType NoteProperty -Name Comments -Value "$($msgTable.cbssCompliant) $SubscriptionName)"| Out-Null
+            $Comments = "$($msgTable.cbssCompliant) $SubscriptionName"
+            if ($isV3Sensor) {
+                $Comments += " " + $msgTable.cbssV3DetectedSuffix
+            }
+            elseif ($isV2Sensor) {
+                $Comments += " " + $msgTable.cbssV2DeprecatedWarning
+            }
             $MitigationCommands = "N/A."
-        } else {
-            $Object | Add-Member -MemberType NoteProperty -Name Comments -Value $Comment2 | Out-Null   
+        } else { 
+            $Comments = "$($msgTable.cbcSensorsdontExist) $SubscriptionName"
             $MitigationCommands = "Contact CBS to deploy sensors."
         }
     }
 
-    $Object | Add-Member -MemberType NoteProperty -Name ComplianceStatus -Value $IsCompliant| Out-Null
+    $Object = [PSCustomObject]@{
+        ComplianceStatus = $IsCompliant
+        ControlName = $ControlName
+        Comments = $Comments
+        ItemName = $ItemName
+        ReportTime = $ReportTime
+        itsgcode = $itsgcode
+    }
     $Object | Add-Member -MemberType NoteProperty -Name MitigationCommands -Value $MitigationCommands| Out-Null
 
-    [PSCustomObject]@{ 
+    # Add profile information if MCUP feature is enabled
+    if ($EnableMultiCloudProfiles) {
+        $result = Add-ProfileInformation -Result $Object -CloudUsageProfiles $CloudUsageProfiles -ModuleProfiles $ModuleProfiles -SubscriptionId $sub.Id -ErrorList $ErrorList
+        Write-Host "$result"
+    }
+
+    $moduleOutput = [PSCustomObject]@{ 
         ComplianceResults = $Object 
         Errors = $ErrorList
         AdditionalResults = $AdditionalResults
     }
+    
+    return $moduleOutput
+
 }

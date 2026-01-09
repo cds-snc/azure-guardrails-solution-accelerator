@@ -3,7 +3,7 @@
 ## Introduction
 
 The purpose of this implementation is to help Canadian Public Sector departments and agencies to identify and remediate the [GC Cloud Guardrails](https://github.com/canada-ca/cloud-guardrails#gc-cloud-guardrails) to ensure ongoing compliance with the GC Cloud Guardrail policy validations.
- 
+ 
 ## Project Background
 
 The GC Cloud Guardrails are the minimum required security controls defined by Treasure Board Secretariat (TBS) to protect and secure data in order to maintain the security posture of Cloud environments. GC clients must implement the guardrails within the first 30 days of a Cloud account creation. The guardrails have been mapped on to six different Cloud usage profiles.

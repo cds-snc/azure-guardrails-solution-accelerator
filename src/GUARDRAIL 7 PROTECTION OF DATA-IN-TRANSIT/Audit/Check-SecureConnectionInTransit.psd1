@@ -16,7 +16,7 @@
 RootModule = 'Check-SecureConnectionInTransit'
 
 # Version number of this module.
-ModuleVersion = '1.2.11'
+ModuleVersion = '1.2.13'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()

@@ -22,15 +22,13 @@ function Check-GuestRoleReviews {
     
     $accessReviewList = @()
 
-    # list all acces reviews in identity governance
+    # list all access reviews in identity governance (using paginated query to handle >100 reviews)
     $urlPath = "/identityGovernance/accessReviews/definitions"
 
     try {
-        $response = Invoke-GraphQuery -urlPath $urlPath -ErrorAction Stop
+        $response = Invoke-GraphQueryEX -urlPath $urlPath -ErrorAction Stop
         # portal
         $data = $response.Content
-        # # localExecution
-        # $data = $response
         
         if ($null -ne $data -and $null -ne $data.value) {
             $accessReviewsAll = $data.value 
@@ -159,20 +157,10 @@ function Check-GuestRoleReviews {
         itsgcode         = $itsgcode
     }
     
-    # Conditionally add the Profile field based on the feature flag
-    if ($EnableMultiCloudProfiles) {        
-        $evalResult = Get-EvaluationProfile -CloudUsageProfiles $CloudUsageProfiles -ModuleProfiles $ModuleProfiles
-        if (!$evalResult.ShouldEvaluate) {
-            if ($evalResult.Profile -gt 0) {
-                $PsObject.ComplianceStatus = "Not Applicable"
-                $PsObject | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile
-                $PsObject.Comments = "Not evaluated - Profile $($evalResult.Profile) not present in CloudUsageProfiles"
-            } else {
-                $ErrorList.Add("Error occurred while evaluating profile configuration")
-            }
-        } else {
-            $PsObject | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile
-        }
+    # Add profile information if MCUP feature is enabled
+    if ($EnableMultiCloudProfiles) {
+        $result = Add-ProfileInformation -Result $PsObject -CloudUsageProfiles $CloudUsageProfiles -ModuleProfiles $ModuleProfiles -SubscriptionId $subscriptionId -ErrorList $ErrorList
+        Write-Host "$result"
     }
     
     $moduleOutput= [PSCustomObject]@{ 

@@ -17,11 +17,13 @@ function Check-OnlineAttackCountermeasures {
     [bool] $LockoutThresholdNonCompliant = $false
     [bool] $BannedPasswordListNonCompliant = $false
 
-    # Fetch group settings
+    # Fetch group settings (using paginated query for consistency)
     try {
-        $groupSettings = Invoke-GraphQuery -urlPath "/groupSettings" -ErrorAction Stop
+        $groupSettings = Invoke-GraphQueryEX -urlPath "/groupSettings" -ErrorAction Stop
         $groupSettingsJsonObject = $groupSettings.Content
-        $passwordRuleSettings = $groupSettingsJsonObject.value | Where-Object { $_.displayName -eq "Password Rule Settings" }
+        $passwordRuleSettings = if ($groupSettingsJsonObject -and $groupSettingsJsonObject.value) { 
+            $groupSettingsJsonObject.value | Where-Object { $_.displayName -eq "Password Rule Settings" } 
+        } else { $null }
         
         if ($null -eq $passwordRuleSettings) {
             throw "Password Rule Settings not found in group settings"
@@ -88,21 +90,10 @@ function Check-OnlineAttackCountermeasures {
         itsgcode         = $itsgcode
     }
 
-    # Conditionally add the Profile field based on the feature flag
+    # Add profile information if MCUP feature is enabled
     if ($EnableMultiCloudProfiles) {
-        $evalResult = Get-EvaluationProfile -CloudUsageProfiles $CloudUsageProfiles -ModuleProfiles $ModuleProfiles
-        if (!$evalResult.ShouldEvaluate) {
-            if ($evalResult.Profile -gt 0) {
-                $PsObject.ComplianceStatus = "Not Applicable"
-                $PsObject | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile
-                $PsObject.Comments = "Not evaluated - Profile $($evalResult.Profile) not present in CloudUsageProfiles"
-            } else {
-                $ErrorList.Add("Error occurred while evaluating profile configuration")
-            }
-        } else {
-            
-            $PsObject | Add-Member -MemberType NoteProperty -Name "Profile" -Value $evalResult.Profile
-        }
+        $result = Add-ProfileInformation -Result $PsObject -CloudUsageProfiles $CloudUsageProfiles -ModuleProfiles $ModuleProfiles -SubscriptionId $subscriptionId -ErrorList $ErrorList
+        Write-Host "$result"
     }
 
     $moduleOutput = [PSCustomObject]@{
